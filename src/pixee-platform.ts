@@ -3,28 +3,42 @@ import axios from "axios";
 import fs from "fs";
 import FormData from "form-data";
 import { Tool } from "./inputs";
-import { getGitHubContext } from "./github";
+import { getGitHubContext, getRepositoryInfo } from "./github";
 
-export async function uploadInputFile(tool: Tool, file: string) {
-  const fileContent = fs.readFileSync(file, "utf-8");
-  const form = new FormData();
-  form.append("file", fileContent);
+export async function uploadInputFiles(tool: Tool, files: Array<string>) {
+  const path = require("path");
+  const pixeeUrl = core.getInput("pixee-api-url");
+  const token = await core.getIDToken(pixeeUrl);
+  const url = buildUploadApiUrl(tool);
 
-  const token = await core.getIDToken(AUDIENCE);
-  return axios
-    .put(buildUploadApiUrl(tool), form, {
-      headers: {
-        ...form.getHeaders(),
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    .then(() => {
-      // don't return the axios response
-    });
+  // Send each file in a separate request
+  const uploads = files.map(async (file) => {
+    const form = new FormData();
+    form.append("files", fs.readFileSync(file), path.basename(file));
+
+    return axios
+      .put(url, form, {
+        headers: {
+          ...form.getHeaders(),
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then(() => {
+        // don't return the axios response
+        console.log(`Uploaded ${file} to ${url}`);
+      })
+      .catch((error) => {
+        console.error(`Failed to upload ${file} to ${url}`, error);
+        throw new Error(`Failed to upload ${file} to ${url}`);
+      });
+  });
+
+  return Promise.all(uploads);
 }
 
 export async function triggerPrAnalysis(prNumber: number) {
-  const token = await core.getIDToken(AUDIENCE);
+  const pixeeUrl = core.getInput("pixee-api-url");
+  const token = await core.getIDToken(pixeeUrl);
 
   return axios
     .post(buildTriggerApiUrl(prNumber), null, {
@@ -39,16 +53,15 @@ export async function triggerPrAnalysis(prNumber: number) {
 }
 
 function buildTriggerApiUrl(prNumber: number): string {
-  const { owner, repo } = getGitHubContext();
+  const { owner, repo } = getRepositoryInfo();
+  const pixeeUrl = core.getInput("pixee-api-url");
 
-  return `${PIXEE_URL}/${owner}/${repo}/${prNumber}`;
+  return `${pixeeUrl}/analysis-input/${owner}/${repo}/${prNumber}`;
 }
 
-function buildUploadApiUrl(tool: string): string {
+function buildUploadApiUrl(tool: Tool): string {
   const { owner, repo, sha } = getGitHubContext();
+  const pixeeUrl = core.getInput("pixee-api-url");
 
-  return `${PIXEE_URL}/${owner}/${repo}/${sha}/${tool}`;
+  return `${pixeeUrl}/analysis-input/${owner}/${repo}/${sha}/${tool}`;
 }
-
-const AUDIENCE = "https://app.pixee.ai";
-const PIXEE_URL = "https://api.pixee.ai/analysis-input";

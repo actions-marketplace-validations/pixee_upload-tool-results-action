@@ -4,23 +4,53 @@ description:
   automatically fix issues found.
 
 inputs:
+  pixee-api-url:
+    description: The base URL of the Pixee API
+    default: https://api.pixee.ai
   tool:
     description: >
       The supported code scanning tool that produced the results being uploaded.
-      Allowed values: 'sonar', 'codeql', 'semgrep'
+      Allowed values: 'sonar', 'codeql', 'semgrep', 'defectdojo', 'contrast',
+      'snyk', 'checkmarx', 'polaris'
     required: true
   file:
     description: Path to the tool's results file to share with Pixeebot.
     required: false
   sonar-token:
-    description: Token for authenticating requests to SonarCloud.
+    description: Token for authenticating requests to Sonar.
     required: false
   sonar-component-key:
-    description: Key identifying the SonarCloud component to be analyzed.
+    description: Key identifying the Sonar component to be analyzed.
     required: false
-  sonar-api-url:
-    description: Base URL of the SonarCloud API.
-    default: https://sonarcloud.io/api
+  sonar-host-url:
+    description: SonarCloud or SonarQube host URL.
+    default: https://sonarcloud.io
+  defectdojo-token:
+    description: Token for authenticating requests to DefectDojo.
+    required: false
+  defectdojo-api-url:
+    description: Base URL of the DefectDojo API.
+    required: false
+  defectdojo-product-name:
+    description: Key identifying the DefectDojo product to be analyzed.
+    required: false
+  contrast-api-url:
+    description: Base URL of the Contrast API.
+    required: false
+  contrast-org-id:
+    description:
+      Unique identifier for the organization in Contrast that needs to be
+      analyzed.
+    required: false
+  contrast-app-id:
+    description: Unique identifier for the specific application within Contrast.
+    required: false
+  contrast-api-key:
+    description: Api key for authenticating requests to Contrast.
+    required: false
+  contrast-token:
+    description: Token for authenticating requests to Contrast.
+    required: false
 
 runs:
   using: "node20"
